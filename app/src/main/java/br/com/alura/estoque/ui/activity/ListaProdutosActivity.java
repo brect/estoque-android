@@ -48,31 +48,33 @@ public class ListaProdutosActivity extends AppCompatActivity {
 
     //carrega produtos internos e depois carrega produtos externos
     private void buscaProdutos() {
-        ProdutoService service = new EstoqueRetrofit().getProdutoService();
-        Call<List<Produto>> call = service.buscaTodos();
 
+        BuscaProdutosInternos();
+    }
+
+    private void BuscaProdutosInternos() {
         new BaseAsyncTask<>(dao::buscaTodos,
                 resultado -> {
                     adapter.atualiza(resultado);
-                    new BaseAsyncTask<>(() -> {
-                        try {
-                            Response<List<Produto>> resposta = call.execute();
-                            List<Produto> produtosNovos = resposta.body();
-                            dao.salva(produtosNovos);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        return dao.buscaTodos();
-                    }, produtosNovos -> {
-                        if(produtosNovos != null){
-                            adapter.atualiza(produtosNovos);
-                        } else {
-                            Toast.makeText(this,
-                                    "Não possível buscar os produtos da API",
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    }).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                })
+                    buscaProdutosNaAPI();
+                }).execute();
+    }
+
+    private void buscaProdutosNaAPI() {
+        ProdutoService service = new EstoqueRetrofit().getProdutoService();
+        Call<List<Produto>> call = service.buscaTodos();
+
+        new BaseAsyncTask<>(() -> {
+            try {
+                Response<List<Produto>> resposta = call.execute();
+                List<Produto> produtosNovos = resposta.body();
+                dao.salva(produtosNovos);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return dao.buscaTodos();
+        }, produtosNovos ->
+                adapter.atualiza(produtosNovos))
                 .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
