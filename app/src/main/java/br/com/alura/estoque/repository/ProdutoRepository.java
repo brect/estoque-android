@@ -43,7 +43,6 @@ public class ProdutoRepository {
     private void buscaProdutosNaAPI(DadosCarregadosCallback<List<Produto>> callback) {
 
         Call<List<Produto>> call = service.buscaTodos();
-
         call.enqueue(new BaseCallback<>(
                 new BaseCallback.RespostaCallback<List<Produto>>() {
                     @Override
@@ -103,9 +102,7 @@ public class ProdutoRepository {
 
     public void edita(Produto produto,
                       DadosCarregadosCallback<Produto> callback) {
-
         editaNaAPI(produto, callback);
-
     }
 
     private void editaNaAPI(Produto produto, DadosCarregadosCallback<Produto> callback) {
@@ -125,10 +122,41 @@ public class ProdutoRepository {
         ));
     }
 
-    private void editaInterno(Produto produto, DadosCarregadosCallback<Produto> callback) {
+    private void editaInterno(Produto produto,
+                              DadosCarregadosCallback<Produto> callback) {
         new BaseAsyncTask<>(() -> {
             dao.atualiza(produto);
             return produto;
+        }, callback::quandoSucesso)
+                .execute();
+    }
+
+    public void remove(Produto produto,
+                       DadosCarregadosCallback<Void> callback) {
+        removeNaAPI(produto, callback);
+    }
+
+    private void removeNaAPI(Produto produto, DadosCarregadosCallback<Void> callback) {
+        Call<Void> call = service.remove(produto.getId());
+        call.enqueue(new BaseCallback<>(
+                new BaseCallback.RespostaCallback<Void>() {
+                    @Override
+                    public void quandoSucesso(Void resultado) {
+                        removeInterno(produto, callback);
+                    }
+
+                    @Override
+                    public void quandoFalha(String erro) {
+
+                    }
+                }
+        ));
+    }
+
+    private void removeInterno(Produto produto, DadosCarregadosCallback<Void> callback) {
+        new BaseAsyncTask<>(() -> {
+            dao.remove(produto);
+            return null;
         }, callback::quandoSucesso)
                 .execute();
     }
